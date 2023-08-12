@@ -1,3 +1,6 @@
+import os
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
 import sys
 
@@ -51,7 +54,7 @@ class VisualNode:
         if self.is_complete_word:
             color = (0, 255, 0)  # Green for complete words
         else:
-            color = (0, 0, 0)    # Black for other nodes
+            color = (0, 0, 0)  # Black for other nodes
 
         text_surface = font.render(self.name, True, color)
         text_rect = text_surface.get_rect(center=(self.x, self.y))
@@ -82,10 +85,10 @@ def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y)
         child_visual_node = VisualNode(child.name, child_x, child_y)
         child_visual_node.transform(scale, tree_offset_x, tree_offset_y)
 
-        pygame.draw.line(screen, BLACK, (visual_node.x, visual_node.y + 20), (child_visual_node.x, child_visual_node.y), 2)
+        pygame.draw.line(screen, BLACK, (visual_node.x, visual_node.y + 20), (child_visual_node.x, child_visual_node.y),
+                         2)
         render_visual_tree(child, child_x, child_y, spacing // 2, scale, tree_offset_x, tree_offset_y)
         child_x += spacing
-
 
 
 # Initialize Pygame
@@ -103,8 +106,15 @@ pygame.display.set_caption("Word Tree Visualization")
 # Define font
 font = pygame.font.Font(None, 24)
 
-# Beispiel Wörterliste
-words = ["Hundefutter", "Roberto", "Roboter", "Huhn"]
+try:
+    # load the wordlist from the file words.txt
+    with open("words.txt",mode="r",encoding="utf-8") as f:
+        words = f.read().splitlines()
+except FileNotFoundError:
+    print("File words.txt not found!")
+    os.system("pause")
+    sys.exit()
+
 
 # Create the word tree
 word_tree = WordTree()
