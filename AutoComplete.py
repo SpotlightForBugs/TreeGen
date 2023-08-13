@@ -1,11 +1,11 @@
+import sys
+import pygame  # skipcq FLK-E402
 import math
 import os
 import random
 from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-import pygame # skipcq FLK-E402
-import sys
 
 uuids = []
 
@@ -58,7 +58,7 @@ def update_wordlist(param):
             if param[0] == word_list[i][0]:
                 word_list[i] = param
                 break
-            elif i == len(word_list) - 1:
+            if i == len(word_list) - 1:
                 word_list.append(param)
 
 
@@ -110,7 +110,8 @@ def find_clicked_node(x, y):
 
 
 def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y):
-    visual_node = VisualNode(node.name, x, y, uuid=generate_uuid(), word=node.word)
+    visual_node = VisualNode(
+        node.name, x, y, uuid=generate_uuid(), word=node.word)
     visual_node.set_word(node.word)
 
     visual_node.transform(scale, tree_offset_x, tree_offset_y)
@@ -121,13 +122,15 @@ def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y)
     child_y = y + 500
 
     for child in node.children:
-        child_visual_node = VisualNode(child.name, child_x, child_y, uuid=generate_uuid(), word=child.word)
+        child_visual_node = VisualNode(
+            child.name, child_x, child_y, uuid=generate_uuid(), word=child.word)
 
         child_visual_node.transform(scale, tree_offset_x, tree_offset_y)
 
         pygame.draw.line(screen, BLACK, (visual_node.x, visual_node.y + 20), (child_visual_node.x, child_visual_node.y),
                          2)
-        render_visual_tree(child, child_x, child_y, spacing // 2, scale, tree_offset_x, tree_offset_y)
+        render_visual_tree(child, child_x, child_y, spacing //
+                           2, scale, tree_offset_x, tree_offset_y)
         child_x += spacing
 
 
@@ -140,7 +143,8 @@ BLACK = (0, 0, 0)
 
 # Set up the display
 screen_width, screen_height = 800, 600
-screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+screen = pygame.display.set_mode(
+    (screen_width, screen_height), pygame.RESIZABLE)
 pygame.display.set_caption("Word Tree Visualization")
 
 # Define font
@@ -211,7 +215,8 @@ while running:
                     res = []
                     [res.append(x) for x in possible_words if x not in res]
 
-                    text_to_render = [x, y, "Possible words: " + ", ".join(res)]
+                    text_to_render = [
+                        x, y, "Possible words: " + ", ".join(res)]
 
                 changed = True
 
@@ -231,10 +236,12 @@ while running:
 
     if changed:
         screen.fill(WHITE)
-        render_visual_tree(word_tree.root, screen_width // 2, 100, 400, scale, tree_offset_x, tree_offset_y)
+        render_visual_tree(word_tree.root, screen_width // 2,
+                           100, 400, scale, tree_offset_x, tree_offset_y)
         if text_to_render[2] != "":
             text_surface = font.render(text_to_render[2], True, BLACK)
-            text_rect = text_surface.get_rect(center=(text_to_render[0], text_to_render[1]))
+            text_rect = text_surface.get_rect(
+                center=(text_to_render[0], text_to_render[1]))
             text_to_render = [0, 0, ""]
             screen.blit(text_surface, text_rect)
         pygame.display.flip()
