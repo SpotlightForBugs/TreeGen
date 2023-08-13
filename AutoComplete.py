@@ -1,11 +1,10 @@
 import sys
-import pygame  # skipcq FLK-E402
-import math
-import os
-import random
 from os import environ
+import math
+import random
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+import pygame  # skipcq FLK-E402
 
 uuids = []
 
@@ -94,17 +93,18 @@ class VisualNode:
         screen.blit(text_surface, text_rect)
 
 
-def find_clicked_node(x, y):
+def find_clicked_node(x, y, word_list):
     nearest_node = None
     min_distance = float('inf')
     max_y_offset = 10
     max_x_offset = 10
 
-    for node in word_list:
-        distance = math.sqrt((x - node[1].x) ** 2 + (y - node[1].y) ** 2)
-        if distance < min_distance and abs(x - node[1].x) < max_x_offset and abs(y - node[1].y) < max_y_offset:
+    for node_tuple in word_list:
+        node = node_tuple[1]
+        distance = math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2)
+        if distance < min_distance and abs(x - node.x) < max_x_offset and abs(y - node.y) < max_y_offset:
             min_distance = distance
-            nearest_node = node[1]
+            nearest_node = node
 
     return nearest_node
 
@@ -148,7 +148,7 @@ screen = pygame.display.set_mode(
 pygame.display.set_caption("Word Tree Visualization")
 
 # Define font
-font_name = random.choice(pygame.font.get_fonts())
+font_name = "Monospace"
 font = pygame.font.SysFont(font_name, 20)
 
 try:
@@ -181,10 +181,15 @@ changed = True
 # Main loop
 running = True
 while running:
-    # print([node.name for node in word_list])
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.VIDEORESIZE:
+            screen = pygame.display.set_mode(
+                (event.w, event.h), pygame.RESIZABLE)
+            changed = True
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 4:  # Scroll up (zoom in)
                 scale *= 1.1
@@ -195,21 +200,16 @@ while running:
             if event.button == 1:  # Left mouse button click
                 x, y = event.pos
                 changed = True
-                clicked_node: VisualNode = find_clicked_node(x, y)
+                clicked_node: VisualNode = find_clicked_node(x, y, word_list)
                 if clicked_node:
-                    print("Clicked Node Coordinates:", x, y)
-                    print("Letters:", clicked_node.name)
-                    print("Word:", clicked_node.word)
 
-                    # if there are words containing the clicked node's word as a prefix, save them.
                     possible_words = []
                     for node in word_list:
                         if node[1].word:
-                            print(node[1].word)
                             if str(node[1].word).startswith(clicked_node.word):
                                 possible_words.append(node[1].word)
 
-                    print("Mouse Coordinates:", event.pos)
+
 
                     # render those next to the mouse cursors click position
                     res = []
@@ -245,7 +245,7 @@ while running:
             text_to_render = [0, 0, ""]
             screen.blit(text_surface, text_rect)
         pygame.display.flip()
-        # print(word_list)
+
         changed = False
 
 # Quit Pygame
