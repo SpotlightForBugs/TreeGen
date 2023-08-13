@@ -4,7 +4,7 @@ import random
 from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-import pygame
+import pygame # skipcq FLK-E402
 import sys
 
 uuids = []
@@ -153,7 +153,7 @@ try:
         words = f.read().splitlines()
 except FileNotFoundError:
     print("File words.txt not found!")
-    os.system("pause")
+    input("Press Enter to continue...")
     sys.exit()
 
 # Create the word tree
