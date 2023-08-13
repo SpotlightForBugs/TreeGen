@@ -58,7 +58,7 @@ def update_wordlist(param):
             if param[0] == word_list[i][0]:
                 word_list[i] = param
                 break
-            elif i == len(word_list) - 1:
+            if i == len(word_list) - 1:
                 word_list.append(param)
 
 
