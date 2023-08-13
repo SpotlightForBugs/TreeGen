@@ -1,3 +1,4 @@
+import pygame  # skipcq FLK-E402
 import sys
 from os import environ
 import math
@@ -5,7 +6,6 @@ import easygui
 import random
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-import pygame  # skipcq FLK-E402
 
 uuids = []
 
@@ -133,7 +133,7 @@ def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y)
         if child_visual_node.word == autocomplete_word_beginning:
             line_color = pygame.color.THECOLORS['green']
         elif autocomplete_word_beginning[:len(child_visual_node.word)] == child_visual_node.word[
-                                                                        :len(autocomplete_word_beginning)]:
+                :len(autocomplete_word_beginning)]:
 
             line_color = pygame.color.THECOLORS['yellow']
 
