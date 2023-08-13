@@ -1,15 +1,21 @@
+import math
 import os
+import random
 from os import environ
+
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
 import sys
 
+uuids = []
+
 
 class Node:
-    def __init__(self, name, parent=None):
+    def __init__(self, name, parent=None, word=None):
         self.name = name
         self.parent = parent
         self.children = []
+        self.word = word
 
     def add_child(self, child):
         self.children.append(child)
@@ -20,6 +26,7 @@ class WordTree:
         self.root = Node('')
 
     def insert_word(self, word):
+
         node = self.root
         for letter in word:
             found = False
@@ -29,26 +36,51 @@ class WordTree:
                     found = True
                     break
             if not found:
-                new_node = Node(letter, parent=node)
+                new_node = Node(letter, parent=node, word=word)
                 node.children.append(new_node)
                 node = new_node
 
 
+def generate_uuid():
+    if len(uuids) == 0:
+        uuids.append(0)
+        return 0
+    uuid = uuids[len(uuids) - 1] + 1
+    uuids.append(uuid)
+    return uuid
+
+
+def update_wordlist(param):
+    if len(word_list) == 0:
+        word_list.append(param)
+    else:
+        for i in range(len(word_list)):
+            if param[0] == word_list[i][0]:
+                word_list[i] = param
+                break
+            elif i == len(word_list) - 1:
+                word_list.append(param)
+
+
 class VisualNode:
-    def __init__(self, name, x, y):
+    def __init__(self, name, x, y, uuid, word=""):
         self.name = name
         self.x = x
         self.y = y
-        self.word = ""
+        self.word = word
         self.is_complete_word = False
+        self.uuid = uuid
+        update_wordlist([self.uuid, self])
 
-    def set_word(self, word, is_complete_word):
+    def set_word(self, word, is_complete_word=False):
         self.word = word
         self.is_complete_word = is_complete_word
 
     def transform(self, scale, tree_offset_x, tree_offset_y):
         self.x = int(self.x * scale + tree_offset_x)
+
         self.y = int(self.y * scale + tree_offset_y)
+        update_wordlist([self.uuid, self])
 
     def draw(self):
         if self.is_complete_word:
@@ -62,27 +94,35 @@ class VisualNode:
         screen.blit(text_surface, text_rect)
 
 
-def find_clicked_node(node, x, y, scale, offset_x, offset_y):
-    # Recursive function to find the clicked node
-    pass
+def find_clicked_node(x, y):
+    nearest_node = None
+    min_distance = float('inf')
+    max_y_offset = 10
+    max_x_offset = 10
 
+    for node in word_list:
+        distance = math.sqrt((x - node[1].x) ** 2 + (y - node[1].y) ** 2)
+        if distance < min_distance and abs(x - node[1].x) < max_x_offset and abs(y - node[1].y) < max_y_offset:
+            min_distance = distance
+            nearest_node = node[1]
 
-def get_possible_words(node):
-    # Function to return possible words based on the clicked node
-    # Implement your logic here
-    pass
+    return nearest_node
 
 
 def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y):
-    visual_node = VisualNode(node.name, x, y)
+    visual_node = VisualNode(node.name, x, y, uuid=generate_uuid(), word=node.word)
+    visual_node.set_word(node.word)
+
     visual_node.transform(scale, tree_offset_x, tree_offset_y)
+
     visual_node.draw()
 
     child_x = x - spacing // 2
-    child_y = y + 100
+    child_y = y + 500
 
     for child in node.children:
-        child_visual_node = VisualNode(child.name, child_x, child_y)
+        child_visual_node = VisualNode(child.name, child_x, child_y, uuid=generate_uuid(), word=child.word)
+
         child_visual_node.transform(scale, tree_offset_x, tree_offset_y)
 
         pygame.draw.line(screen, BLACK, (visual_node.x, visual_node.y + 20), (child_visual_node.x, child_visual_node.y),
@@ -104,17 +144,17 @@ screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE
 pygame.display.set_caption("Word Tree Visualization")
 
 # Define font
-font = pygame.font.Font(None, 24)
+font_name = random.choice(pygame.font.get_fonts())
+font = pygame.font.SysFont(font_name, 20)
 
 try:
     # load the wordlist from the file words.txt
-    with open("words.txt",mode="r",encoding="utf-8") as f:
+    with open("words.txt", mode="r", encoding="utf-8") as f:
         words = f.read().splitlines()
 except FileNotFoundError:
     print("File words.txt not found!")
     os.system("pause")
     sys.exit()
-
 
 # Create the word tree
 word_tree = WordTree()
@@ -127,37 +167,79 @@ scale = 1.0
 tree_offset_x = 0
 tree_offset_y = 0
 
+# word_list
+word_list = []
+
+text_to_render = [0, 0, ""]
+
+changed = True
+
 # Main loop
 running = True
 while running:
+    # print([node.name for node in word_list])
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 4:  # Scroll up (zoom in)
                 scale *= 1.1
+                changed = True
             elif event.button == 5:  # Scroll down (zoom out)
                 scale /= 1.1
-            elif event.button == 1:  # Left mouse button click
+                changed = True
+            if event.button == 1:  # Left mouse button click
                 x, y = event.pos
-                clicked_node = find_clicked_node(word_tree.root, x, y, scale, tree_offset_x, tree_offset_y)
+                changed = True
+                clicked_node: VisualNode = find_clicked_node(x, y)
                 if clicked_node:
-                    print("Clicked Node:", clicked_node.word)
-                    print("Can Form Words:", get_possible_words(clicked_node))
+                    print("Clicked Node Coordinates:", x, y)
+                    print("Letters:", clicked_node.name)
+                    print("Word:", clicked_node.word)
+
+                    # if there are words containing the clicked node's word as a prefix, save them.
+                    possible_words = []
+                    for node in word_list:
+                        if node[1].word:
+                            print(node[1].word)
+                            if str(node[1].word).startswith(clicked_node.word):
+                                possible_words.append(node[1].word)
+
+                    print("Mouse Coordinates:", event.pos)
+
+                    # render those next to the mouse cursors click position
+                    res = []
+                    [res.append(x) for x in possible_words if x not in res]
+
+                    text_to_render = [x, y, "Possible words: " + ", ".join(res)]
+
+                changed = True
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
         tree_offset_x += 10
+        changed = True
     if keys[pygame.K_RIGHT]:
         tree_offset_x -= 10
+        changed = True
     if keys[pygame.K_UP]:
         tree_offset_y += 10
+        changed = True
     if keys[pygame.K_DOWN]:
         tree_offset_y -= 10
+        changed = True
 
-    screen.fill(WHITE)
-    render_visual_tree(word_tree.root, screen_width // 2, 100, 400, scale, tree_offset_x, tree_offset_y)
-    pygame.display.flip()
+    if changed:
+        screen.fill(WHITE)
+        render_visual_tree(word_tree.root, screen_width // 2, 100, 400, scale, tree_offset_x, tree_offset_y)
+        if text_to_render[2] != "":
+            text_surface = font.render(text_to_render[2], True, BLACK)
+            text_rect = text_surface.get_rect(center=(text_to_render[0], text_to_render[1]))
+            text_to_render = [0, 0, ""]
+            screen.blit(text_surface, text_rect)
+        pygame.display.flip()
+        # print(word_list)
+        changed = False
 
 # Quit Pygame
 pygame.quit()
