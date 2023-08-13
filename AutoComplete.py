@@ -1,10 +1,10 @@
+import pygame  # skipcq FLK-E402
 import sys
 from os import environ
 import math
 import random
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-import pygame  # skipcq FLK-E402
 
 uuids = []
 
@@ -208,8 +208,6 @@ while running:
                         if node[1].word:
                             if str(node[1].word).startswith(clicked_node.word):
                                 possible_words.append(node[1].word)
-
-
 
                     # render those next to the mouse cursors click position
                     res = []
