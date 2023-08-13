@@ -1,6 +1,7 @@
 import sys
 from os import environ
 import math
+import easygui
 import random
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
@@ -74,6 +75,9 @@ class VisualNode:
     def set_word(self, word, is_complete_word=False):
         self.word = word
         self.is_complete_word = is_complete_word
+        if is_complete_word:
+            self.draw()
+        update_wordlist([self.uuid, self])
 
     def transform(self, scale, tree_offset_x, tree_offset_y):
         self.x = int(self.x * scale + tree_offset_x)
@@ -83,7 +87,7 @@ class VisualNode:
 
     def draw(self):
         if self.is_complete_word:
-            color = (0, 255, 0)  # Green for complete words
+            color = pygame.color.THECOLORS['green']
         else:
             color = (0, 0, 0)  # Black for other nodes
 
@@ -126,9 +130,20 @@ def render_visual_tree(node, x, y, spacing, scale, tree_offset_x, tree_offset_y)
             child.name, child_x, child_y, uuid=generate_uuid(), word=child.word)
 
         child_visual_node.transform(scale, tree_offset_x, tree_offset_y)
+        if child_visual_node.word == autocomplete_word_beginning:
+            line_color = pygame.color.THECOLORS['green']
+        elif autocomplete_word_beginning[:len(child_visual_node.word)] == child_visual_node.word[
+                                                                        :len(autocomplete_word_beginning)]:
 
-        pygame.draw.line(screen, BLACK, (visual_node.x, visual_node.y + 20), (child_visual_node.x, child_visual_node.y),
+            line_color = pygame.color.THECOLORS['yellow']
+
+        else:
+            line_color = pygame.color.THECOLORS['black']
+
+        pygame.draw.line(screen, line_color, (visual_node.x, visual_node.y + 20),
+                         (child_visual_node.x, child_visual_node.y),
                          2)
+
         render_visual_tree(child, child_x, child_y, spacing //
                            2, scale, tree_offset_x, tree_offset_y)
         child_x += spacing
@@ -142,7 +157,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
 # Set up the display
-screen_width, screen_height = 800, 600
+screen_width, screen_height = 1920, 1080
 screen = pygame.display.set_mode(
     (screen_width, screen_height), pygame.RESIZABLE)
 pygame.display.set_caption("Word Tree Visualization")
@@ -164,7 +179,7 @@ except FileNotFoundError:
 word_tree = WordTree()
 
 for word in words:
-    word_tree.insert_word(word)
+    word_tree.insert_word(word.lower())
 
 # Initialize zoom and panning
 scale = 1.0
@@ -177,10 +192,26 @@ word_list = []
 text_to_render = [0, 0, ""]
 
 changed = True
-
+last_word = ""
+inputbox = False
+show_autocomplete = True
 # Main loop
 running = True
 while running:
+
+    if show_autocomplete:
+        inputbox = easygui.enterbox(
+            "Enter a word to autocomplete", "Autocomplete")
+
+    if inputbox:
+        autocomplete_word_beginning = inputbox
+        last_word = autocomplete_word_beginning
+        show_autocomplete = False
+    else:
+        if last_word:
+            autocomplete_word_beginning = last_word
+        else:
+            autocomplete_word_beginning = ""
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -209,8 +240,6 @@ while running:
                             if str(node[1].word).startswith(clicked_node.word):
                                 possible_words.append(node[1].word)
 
-
-
                     # render those next to the mouse cursors click position
                     res = []
                     [res.append(x) for x in possible_words if x not in res]
@@ -233,6 +262,9 @@ while running:
     if keys[pygame.K_DOWN]:
         tree_offset_y -= 10
         changed = True
+    if keys[pygame.K_TAB]:
+        show_autocomplete = not show_autocomplete
+        changed = True
 
     if changed:
         screen.fill(WHITE)
@@ -245,6 +277,11 @@ while running:
             text_to_render = [0, 0, ""]
             screen.blit(text_surface, text_rect)
         pygame.display.flip()
+
+        for node in word_list:
+            if str(node[1].word).startswith(autocomplete_word_beginning):
+                selected_node: VisualNode = node[1]
+                selected_node.set_word(selected_node.word, True)
 
         changed = False
 
